@@ -6,11 +6,13 @@
 
 # System Health Tool
 
-A lightweight, open-source Windows desktop app that scans, diagnoses,<br>and cleans up system issues — built for people who aren't technical.
+Scan, diagnose, and clean up Windows system issues<br>from a single native desktop app.
 
 <br>
 
 [![License](https://img.shields.io/badge/license-MIT-222?style=for-the-badge)](LICENSE)
+&nbsp;
+[![Version](https://img.shields.io/badge/version-1.0.0-4C1?style=for-the-badge)](https://github.com/TMHSDigital/system-cleaner/releases)
 &nbsp;
 [![Tauri](https://img.shields.io/badge/Tauri_2-24C8D8?style=for-the-badge&logo=tauri&logoColor=white)](https://v2.tauri.app)
 &nbsp;
@@ -20,11 +22,11 @@ A lightweight, open-source Windows desktop app that scans, diagnoses,<br>and cle
 
 <br>
 
-`~2.5 MB` &nbsp;&bull;&nbsp; `No bloat` &nbsp;&bull;&nbsp; `No telemetry` &nbsp;&bull;&nbsp; `Open source`
+`~2.5 MB installer` &middot; `No bloat` &middot; `No telemetry` &middot; `Open source`
 
 <br>
 
-[Download](https://github.com/TMHSDigital/system-cleaner/releases) &nbsp;&nbsp;|&nbsp;&nbsp; [Build from source](#build-from-source) &nbsp;&nbsp;|&nbsp;&nbsp; [Contributing](docs/CONTRIBUTING.md)
+[Download](https://github.com/TMHSDigital/system-cleaner/releases) &nbsp;&nbsp;|&nbsp;&nbsp; [Architecture](#system-architecture) &nbsp;&nbsp;|&nbsp;&nbsp; [Build from source](#build-from-source) &nbsp;&nbsp;|&nbsp;&nbsp; [Contributing](docs/CONTRIBUTING.md)
 
 </div>
 
@@ -36,30 +38,31 @@ A lightweight, open-source Windows desktop app that scans, diagnoses,<br>and cle
 
 ### What it does
 
-One window. Five panels. Everything your PC needs to stay healthy.
-
-| Panel | What you get |
-|:------|:-------------|
-| **Dashboard** | Real-time health score (0-100), drive space bars, RAM donut chart, one-click **Quick Clean** that only touches safe items |
-| **Disk Cleanup** | Scans temp files, browser caches, crash dumps, dev caches, recycle bin — every item tagged with a color-coded risk level |
-| **Memory** | Live RAM usage, runaway process detection, Hyper-V and WSL VM detection, direct process kill for non-system processes |
-| **Startup** | Toggle startup programs on/off with impact ratings and "recommended to disable" flags — nothing is uninstalled, just toggled |
-| **Recommendations** | Auto-generated tips like *"Your pagefile is on a full drive"* with a **Fix It** button that jumps to the right panel |
+| Module | Capabilities |
+|:-------|:-------------|
+| **Dashboard** | Compute a real-time health score (0-100). Visualize drive capacity, RAM usage, and surface a one-click **Quick Clean** that only touches safe items. |
+| **Disk Cleanup** | Scan temp files, browser caches, crash dumps, dev caches, and the recycle bin. Tag every item with a color-coded risk level before deletion. |
+| **Memory** | Monitor live RAM pressure. Detect runaway processes, Hyper-V VMs, and WSL instances. Kill non-system processes directly from the panel. |
+| **Startup** | Toggle startup entries on/off via registry and shell folders. Display impact ratings (High / Medium / Low) and recommended-to-disable flags. |
+| **Recommendations** | Generate contextual tips (e.g. *"Pagefile is on a full drive"*) and expose a **Fix It** action that navigates to the responsible panel. |
 
 <br>
 
 ### Safety model
 
 > [!IMPORTANT]
-> Nothing is deleted without showing you exactly what will happen first.
+> No files are deleted without explicit user confirmation. Every cleanable item is displayed with its full path and risk classification before any action is taken.
 
-| Risk | What it means |
-|:-----|:--------------|
-| **Safe** | Always fine to delete. Temp files, caches, crash dumps — regenerated automatically. Quick Clean only touches these. |
-| **Moderate** | Dev caches, Windows Update files. Re-downloaded on demand. Must be manually selected. |
-| **Advanced** | Reserved for future features. Will require explicit confirmation. |
+| Risk | Policy |
+|:-----|:-------|
+| **Safe** | Temp files, caches, crash dumps. Regenerated automatically. Quick Clean only touches this tier. |
+| **Moderate** | Dev caches (npm, pip, cargo), Windows Update files. Re-downloaded on demand. Requires manual selection. |
+| **Advanced** | Reserved for future surface area. Will require explicit opt-in confirmation. |
 
-Locked files are silently skipped. System processes cannot be killed. Full details in [`docs/SAFETY.md`](docs/SAFETY.md).
+> [!CAUTION]
+> Locked files are silently skipped. System-critical processes are protected and cannot be killed from the Memory panel.
+
+Full policy documented in [`docs/SAFETY.md`](docs/SAFETY.md).
 
 <br>
 
@@ -71,26 +74,26 @@ Locked files are silently skipped. System processes cannot be killed. Full detai
 
 Grab the latest build from [**Releases**](https://github.com/TMHSDigital/system-cleaner/releases):
 
-| Installer | Size |
-|:----------|:-----|
+| Artifact | Size |
+|:---------|:-----|
 | `System Cleaner_x.x.x_x64-setup.exe` (NSIS) | ~2.5 MB |
 | `System Cleaner_x.x.x_x64_en-US.msi` | ~3.8 MB |
 
 > [!NOTE]
-> Admin privileges are requested on launch — required for clearing system temp files, managing services, and reading all processes.
+> Admin elevation is requested on launch. Required for accessing system temp directories, enumerating all processes, and managing startup registry keys.
 
 <br>
 
 ### Build from source
 
-Requires [Node.js](https://nodejs.org/) 18+, [Rust](https://rustup.rs/) 1.85+, and Windows 10/11 with [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/).
+`Node.js >= 18` &middot; `Rust >= 1.85` &middot; `Windows 10/11` &middot; `WebView2 Runtime`
 
 ```bash
 git clone https://github.com/TMHSDigital/system-cleaner.git
 cd system-cleaner && npm install
 
-npm run tauri:dev        # dev mode — hot reload
-npm run tauri:build      # production → src-tauri/target/release/bundle/
+npm run tauri:dev        # dev mode with hot reload
+npm run tauri:build      # production build → src-tauri/target/release/bundle/
 ```
 
 <br>
@@ -99,23 +102,42 @@ npm run tauri:build      # production → src-tauri/target/release/bundle/
 
 <br>
 
-### Architecture
+### System architecture
 
-```
-                        ┌─────────────────────────────────────┐
-                        │            Tauri Window              │
-                        │                                      │
-                        │   React 19 + TypeScript + Tailwind   │
-                        │   Dashboard / Disk / Memory /        │
-                        │   Startup / Recommendations          │
-                        │              ↕ api.ts                │
-                        │ ──────────────────────────────────── │
-                        │        Rust Backend (Tauri 2)        │
-                        │   disk · memory · startup · cleanup  │
-                        │         · recommendations            │
-                        └────┬──────────┬──────────────┬───────┘
-                             │          │              │
-                         Win32 API   PowerShell    Registry
+```mermaid
+flowchart TD
+    subgraph Frontend ["React 19 + TypeScript + Tailwind v4"]
+        UI["Dashboard / Disk / Memory / Startup / Tips"]
+        API["api.ts — typed invoke() wrappers"]
+        UI --> API
+    end
+
+    subgraph Backend ["Rust Backend — Tauri 2"]
+        DISK["disk.rs — drive info, temp/cache scanning"]
+        MEM["memory.rs — RAM stats, process list, VM detection"]
+        START["startup.rs — registry + shell folder management"]
+        CLEAN["cleanup.rs — safe deletion with progress tracking"]
+        REC["recommendations.rs — contextual system tips"]
+    end
+
+    API -- "IPC (JSON)" --> DISK
+    API -- "IPC (JSON)" --> MEM
+    API -- "IPC (JSON)" --> START
+    API -- "IPC (JSON)" --> CLEAN
+    API -- "IPC (JSON)" --> REC
+
+    subgraph OS ["Windows OS Layer"]
+        WIN32["Win32 API"]
+        PS["PowerShell"]
+        REG["Registry"]
+    end
+
+    DISK --> WIN32
+    MEM --> WIN32
+    START --> REG
+    CLEAN --> PS
+    REC --> WIN32
+    REC --> REG
 ```
 
 Full architecture docs: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
@@ -127,9 +149,9 @@ Full architecture docs: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 | | |
 |:--|:--|
 | **Frontend** | React 19 &middot; TypeScript 5.9 &middot; Tailwind CSS v4 &middot; Recharts |
-| **Backend** | Tauri 2 (Rust) &middot; Win32 API &middot; PowerShell &middot; Registry |
-| **Build** | Vite 7 &middot; Cargo |
-| **Icons** | Lucide React |
+| **Backend** | Tauri 2 &middot; Rust &middot; sysinfo &middot; winreg &middot; windows-rs |
+| **Build** | Vite 7 &middot; Cargo &middot; tauri-cli |
+| **UI** | Lucide React &middot; Custom design tokens |
 
 <br>
 
@@ -141,6 +163,8 @@ Full architecture docs: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 ```
 src/
 ├── App.tsx                         # Sidebar nav + tab routing
+├── index.css                       # Global styles + scrollbar
+├── main.tsx                        # React DOM entry point
 ├── components/
 │   ├── Dashboard.tsx               # Health score, drives, RAM, Quick Clean
 │   ├── DiskCleanup.tsx             # Scan → Review → Clean workflow
@@ -149,28 +173,29 @@ src/
 │   └── Recommendations.tsx         # Auto-tips with Fix It navigation
 ├── lib/
 │   ├── api.ts                      # Typed Tauri invoke() wrappers
-│   ├── types.ts                    # Shared interfaces
-│   └── format.ts                   # Byte/percent formatting
+│   ├── types.ts                    # Shared TypeScript interfaces
+│   └── format.ts                   # Byte/percent formatting utils
 └── styles/
-    └── tokens.css                  # Design tokens + component classes
+    └── tokens.css                  # Design tokens, component classes, animations
 
 src-tauri/
 ├── src/
 │   ├── lib.rs                      # Tauri bootstrap + command registration
-│   ├── main.rs                     # Windows entry point
+│   ├── main.rs                     # Windows entry point (#![windows_subsystem])
 │   └── commands/
-│       ├── disk.rs                 # Drive info, temp/cache scanning
-│       ├── memory.rs               # RAM stats, process list, VM detection
-│       ├── startup.rs              # Registry + folder startup management
-│       ├── cleanup.rs              # Safe deletion with progress tracking
-│       └── recommendations.rs      # Auto-generated system tips
-├── tauri.conf.json
-└── Cargo.toml
+│       ├── disk.rs                 # get_drive_info, scan_disk
+│       ├── memory.rs               # get_memory_info, get_processes, kill_process, get_vm_info
+│       ├── startup.rs              # get_startup_items, toggle_startup_item
+│       ├── cleanup.rs              # clean_items
+│       └── recommendations.rs      # get_recommendations
+├── tauri.conf.json                 # Window config, bundle targets, CSP
+├── Cargo.toml                      # Rust dependencies + crate config
+└── icons/                          # Generated app icons (ico, icns, png)
 
 docs/
-├── ARCHITECTURE.md
-├── SAFETY.md
-└── CONTRIBUTING.md
+├── ARCHITECTURE.md                 # Internal design + data flow
+├── SAFETY.md                       # Risk model + deletion policy
+└── CONTRIBUTING.md                 # Setup, code style, PR guidelines
 ```
 
 </details>
@@ -183,12 +208,12 @@ docs/
 
 ### Contributing
 
-PRs welcome. See [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) for setup, code style, and how to add new cleanup targets.
+PRs welcome. See [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) for environment setup, code style, and how to add new cleanup targets or recommendation rules.
 
 <br>
 
 <div align="center">
 
-[MIT License](LICENSE) &middot; [TMHSDigital](https://github.com/TMHSDigital)
+[MIT License](LICENSE) &middot; [TMHSDigital](https://github.com/TMHSDigital) &middot; [Security Policy](docs/SAFETY.md)
 
 </div>
